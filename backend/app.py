@@ -115,6 +115,35 @@ def run_agents():
     return jsonify({"ok": True, "started": list(tasks.keys())})
 
 
+@app.route("/stop", methods=["POST"])
+def stop_agents():
+    """หยุด agent และตั้งสถานะเป็น idle"""
+    data = request.get_json() or {}
+    agent_id = data.get("agent_id")  # None = หยุดทุกตัว
+
+    state = read_state()
+    if "agents" not in state:
+        state["agents"] = {}
+
+    stopped = []
+    if agent_id:
+        targets = [agent_id]
+    else:
+        targets = list(state["agents"].keys())
+
+    for aid in targets:
+        if state["agents"].get(aid, {}).get("status") not in ("idle", None):
+            state["agents"][aid] = {
+                "status": "idle",
+                "detail": "หยุดโดยผู้ใช้",
+                "updated_at": time.strftime("%H:%M:%S"),
+            }
+            stopped.append(aid)
+
+    write_state(state)
+    return jsonify({"ok": True, "stopped": stopped})
+
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"ok": True, "time": time.strftime("%Y-%m-%d %H:%M:%S")})

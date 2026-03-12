@@ -216,15 +216,18 @@ function updateUI() {
 
   // Agent cards
   const cards = document.getElementById("agent-cards");
+  const isBusy = a => !["idle","error"].includes(a.status);
   cards.innerHTML = agents.map(a => `
-    <button class="agent-card ${selectedAgentId===a.id?'selected':''}"
-            style="--agent-color:${a.color}; ${selectedAgentId===a.id?`border-color:${a.color};background:${a.color}11`:''}"
-            onclick="selectAgent('${a.id}')">
+    <div class="agent-card ${selectedAgentId===a.id?'selected':''}"
+         style="--agent-color:${a.color}; ${selectedAgentId===a.id?`border-color:${a.color};background:${a.color}11`:''}"
+         onclick="selectAgent('${a.id}')">
       <span class="agent-dot" style="background:${STATUS_COLORS[a.status]||'#6b7280'};
         box-shadow:0 0 6px ${STATUS_COLORS[a.status]||'#6b7280'}"></span>
       <span style="color:${a.color}">${a.name.split(' ')[1]}</span>
       <span style="color:#6b7280">${STATUS_ICONS[a.status]||''} ${a.status}</span>
-    </button>
+      ${isBusy(a) ? `<button class="stop-agent-btn" title="หยุดงาน"
+        onclick="event.stopPropagation();stopAgent('${a.id}')">■</button>` : ''}
+    </div>
   `).join("");
 
   // Agent detail
@@ -409,6 +412,45 @@ function setFeedback(text, color) {
   const el = document.getElementById("dispatch-feedback");
   el.textContent = text;
   el.style.color = color;
+}
+
+/* ─── Stop Agents ─── */
+async function stopAgent(agentId) {
+  try {
+    await fetch("/stop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agent_id: agentId }),
+    });
+    // อัพเดต local state ทันที ไม่รอ poll
+    const a = agents.find(ag => ag.id === agentId);
+    if (a) {
+      a.status = "idle";
+      a.detail = "หยุดโดยผู้ใช้";
+      const zone = ZONES[STATUS_TO_ZONE["idle"]];
+      if (zone) {
+        const jitter = () => (Math.random()-0.5)*40;
+        a.targetX = zone.x + jitter();
+        a.targetY = zone.y + jitter() + 40;
+        a.bubbleText = "☕ หยุดพัก...";
+        a.bubbleTimer = 120;
+      }
+      activityLogs.unshift({ time: new Date(), agent: a.name, color: a.color, status: "idle", detail: "หยุดโดยผู้ใช้" });
+      if (activityLogs.length > 30) activityLogs.pop();
+    }
+  } catch (e) {
+    // demo mode — อัพเดตแค่ local
+    const a = agents.find(ag => ag.id === agentId);
+    if (a) { a.status = "idle"; a.detail = ""; }
+  }
+}
+
+async function stopAll() {
+  const busy = agents.filter(a => !["idle","error"].includes(a.status));
+  if (busy.length === 0) return;
+  await Promise.all(busy.map(a => stopAgent(a.id)));
+  setFeedback(`■ หยุด: ${busy.map(a => a.name.split(" ")[1]).join(", ")}`, "#f87171");
+  setTimeout(() => setFeedback("", "#6b7280"), 3000);
 }
 
 function toggleTaskPanel() {

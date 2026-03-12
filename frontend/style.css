@@ -103,6 +103,47 @@ body {
   align-items: center;
   gap: 6px;
   transition: all 0.2s;
+  position: relative;
+}
+
+.stop-agent-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  color: #f87171;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 7px;
+  font-family: inherit;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.15s;
+  margin-left: 2px;
+}
+
+.stop-agent-btn:hover {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 0 8px rgba(239,68,68,0.5);
+}
+
+#stop-all-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1.5px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  padding: 7px 14px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 7px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+#stop-all-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  box-shadow: 0 0 10px rgba(239,68,68,0.3);
 }
 
 .agent-card:hover { border-color: #6b7280; }
