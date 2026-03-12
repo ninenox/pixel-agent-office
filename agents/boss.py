@@ -25,13 +25,13 @@ BOSS_SYSTEM = """คุณคือ Team Lead ของทีม Claude Agent Of
 4. แต่ละ task ต้องสมบูรณ์ในตัวเอง — agent จะไม่เห็นงานของคนอื่น
 
 ตอบเป็น JSON เท่านั้น ห้ามมีข้อความอื่น:
-{
+{{
   "plan": "อธิบาย strategy การแบ่งงาน (1 ประโยค)",
   "assignments": [
-    {"agent_id": "claude-opus", "task": "รายละเอียดงาน"},
-    {"agent_id": "claude-code", "task": "รายละเอียดงาน"}
+    {{"agent_id": "claude-opus", "task": "รายละเอียดงาน"}},
+    {{"agent_id": "claude-code", "task": "รายละเอียดงาน"}}
   ]
-}"""
+}}"""
 
 
 def analyze_task(user_request: str) -> dict:
