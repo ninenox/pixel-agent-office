@@ -15,108 +15,197 @@ const PAL = {
 };
 
 const TILE = 16, SCALE = 2, CW = 800, CH = 560;
+// Room / corridor geometry (mirror pathfinding constants in agents.js)
+const WT = 7;            // wall thickness
+const ROOM_Y1 = 32, ROOM_Y2 = 268;
+const COR_Y1 = 268, COR_Y2 = 320;
+const BREAK_Y1 = 320;
+const ROOM_DEFS = [
+  { x1: 10,  x2: 258, doorCx: 134, label: "RESEARCH" },
+  { x1: 268, x2: 532, doorCx: 400, label: "DEV" },
+  { x1: 542, x2: 790, doorCx: 666, label: "MEETING" },
+];
+const DOOR_HW = 26; // door half-width
 
+/* ─── Drawing helpers ─── */
+function drawDesk(ctx, x, y, colorIdx) {
+  const mc = ["#4ade80","#60a5fa","#fbbf24"][colorIdx % 3];
+  drawRect(ctx, x, y, 120, 50, PAL.desk);
+  drawRect(ctx, x+4, y+2, 112, 4, PAL.deskTop);
+  drawRect(ctx, x+4, y+46, 6, 16, PAL.desk);
+  drawRect(ctx, x+110, y+46, 6, 16, PAL.desk);
+  drawRect(ctx, x+30, y-30, 60, 34, PAL.monitor);
+  drawRect(ctx, x+34, y-27, 52, 26, mc);
+  drawRect(ctx, x+55, y+3, 10, 6, PAL.monitor);
+  drawRect(ctx, x+45, y+8, 30, 3, PAL.monitor);
+  drawRect(ctx, x+35, y+14, 50, 10, "#374151");
+  drawRect(ctx, x+37, y+15, 46, 8, "#4b5563");
+  drawRect(ctx, x+40, y+55, 40, 30, PAL.chair);
+  drawRect(ctx, x+38, y+52, 44, 6, PAL.chair);
+  drawRect(ctx, x+42, y+84, 6, 10, "#374151");
+  drawRect(ctx, x+72, y+84, 6, 10, "#374151");
+  for (let l = 0; l < 3; l++)
+    drawRect(ctx, x+38, y-23+l*6, 20+(colorIdx*13+l*7)%24, 2, "#1a1a2e");
+}
+
+function drawWhiteboard(ctx, x, y) {
+  drawRect(ctx, x, y, 148, 66, PAL.whiteboardFrame);
+  drawRect(ctx, x+4, y+4, 140, 54, PAL.whiteboard);
+  drawRect(ctx, x+10, y+14, 40, 2, "#ef4444");
+  drawRect(ctx, x+10, y+22, 60, 2, "#3b82f6");
+  drawRect(ctx, x+10, y+30, 25, 2, "#22c55e");
+  drawRect(ctx, x+50, y+38, 50, 2, "#f59e0b");
+  drawRect(ctx, x+4, y+58, 140, 8, "#9ca3af");
+}
+
+function drawBookshelf(ctx, x, y) {
+  drawRect(ctx, x, y, 100, 110, PAL.desk);
+  for (let s = 0; s < 3; s++) {
+    drawRect(ctx, x+4, y+4+s*34, 92, 3, PAL.deskTop);
+    [PAL.book1,PAL.book2,PAL.book3,PAL.book4,PAL.book1,PAL.book3].forEach((bc,bi) =>
+      drawRect(ctx, x+6+bi*14, y+8+s*34, 10, 25, bc));
+  }
+}
+
+function drawPlant(ctx, px, py) {
+  drawRect(ctx, px+6, py+12, 16, 18, PAL.pot);
+  drawRect(ctx, px+4, py+10, 20, 4, PAL.pot);
+  drawRect(ctx, px+10, py-4, 8, 16, PAL.plant);
+  drawRect(ctx, px+4, py-2, 8, 10, PAL.plantDark);
+  drawRect(ctx, px+16, py, 6, 10, PAL.plantDark);
+  drawRect(ctx, px+8, py-10, 4, 8, PAL.plant);
+}
+
+function drawWindow(ctx, cx) {
+  drawRect(ctx, cx-34, 0, 68, 30, "#1e2a3a");
+  drawRect(ctx, cx-34, 0, 68, 3, PAL.windowFrame);
+  drawRect(ctx, cx-2, 3, 4, 27, PAL.windowFrame);
+  drawRect(ctx, cx-34, 15, 68, 3, PAL.windowFrame);
+  ctx.fillStyle = "#60a5fa33"; ctx.fillRect(cx-34, 3, 68, 12);
+  ctx.fillStyle = "#60a5fa1a"; ctx.fillRect(cx-34, 18, 68, 9);
+  drawRect(ctx, cx-42, 0, 8, 30, PAL.curtain);
+  drawRect(ctx, cx+34, 0, 8, 30, PAL.curtain);
+}
+
+/* ─── Main office layout ─── */
 function drawOffice(ctx) {
-  // Floor tiles
+  // ── full canvas floor ──
   drawRect(ctx, 0, 0, CW, CH, PAL.floor);
   for (let tx = 0; tx < CW; tx += TILE*SCALE)
     for (let ty = 0; ty < CH; ty += TILE*SCALE)
       if ((tx/(TILE*SCALE) + ty/(TILE*SCALE)) % 2 === 0)
         drawRect(ctx, tx, ty, TILE*SCALE, TILE*SCALE, PAL.floorLight);
 
-  // Wall
-  drawRect(ctx, 0, 0, CW, 60, PAL.wall);
-  drawRect(ctx, 0, 55, CW, 10, PAL.wallAccent);
-
-  // Rug
-  drawRect(ctx, 300, 320, 200, 120, PAL.rug);
-  drawRect(ctx, 308, 328, 184, 104, PAL.rugLight);
-  drawRect(ctx, 316, 336, 168, 88, PAL.rug);
-
-  // Windows
-  [150, 350, 550].forEach(wx => {
-    drawRect(ctx, wx-2, 8, 84, 44, PAL.windowFrame);
-    drawRect(ctx, wx, 10, 80, 40, PAL.window);
-    drawRect(ctx, wx+38, 10, 4, 40, PAL.windowFrame);
-    drawRect(ctx, wx, 28, 80, 4, PAL.windowFrame);
-    drawRect(ctx, wx-6, 6, 8, 48, PAL.curtain);
-    drawRect(ctx, wx+78, 6, 8, 48, PAL.curtain);
+  // ── work-room floors (warmer tint) ──
+  ROOM_DEFS.forEach(r => {
+    drawRect(ctx, r.x1, ROOM_Y1, r.x2 - r.x1, ROOM_Y2 - ROOM_Y1, "#3e3826");
+    for (let tx = r.x1; tx < r.x2; tx += TILE*SCALE)
+      for (let ty = ROOM_Y1; ty < ROOM_Y2; ty += TILE*SCALE)
+        if ((Math.floor(tx/(TILE*SCALE)) + Math.floor(ty/(TILE*SCALE))) % 2 === 0)
+          drawRect(ctx, tx, ty, Math.min(TILE*SCALE, r.x2-tx), Math.min(TILE*SCALE, ROOM_Y2-ty), "#4a4230");
   });
 
-  // Desks
-  [{x:80,y:150},{x:280,y:150},{x:480,y:150}].forEach((d, i) => {
-    drawRect(ctx, d.x, d.y, 120, 50, PAL.desk);
-    drawRect(ctx, d.x+4, d.y+2, 112, 4, PAL.deskTop);
-    drawRect(ctx, d.x+4, d.y+46, 6, 16, PAL.desk);
-    drawRect(ctx, d.x+110, d.y+46, 6, 16, PAL.desk);
-    // Monitor
-    drawRect(ctx, d.x+30, d.y-30, 60, 34, PAL.monitor);
-    const colors = ["#4ade80","#60a5fa","#fbbf24"];
-    drawRect(ctx, d.x+34, d.y-27, 52, 26, colors[i]);
-    drawRect(ctx, d.x+55, d.y+3, 10, 6, PAL.monitor);
-    drawRect(ctx, d.x+45, d.y+8, 30, 3, PAL.monitor);
-    // Keyboard
-    drawRect(ctx, d.x+35, d.y+14, 50, 10, "#374151");
-    drawRect(ctx, d.x+37, d.y+15, 46, 8, "#4b5563");
-    // Chair
-    drawRect(ctx, d.x+40, d.y+55, 40, 30, PAL.chair);
-    drawRect(ctx, d.x+38, d.y+52, 44, 6, PAL.chair);
-    drawRect(ctx, d.x+42, d.y+84, 6, 10, "#374151");
-    drawRect(ctx, d.x+72, d.y+84, 6, 10, "#374151");
-    // Screen lines (deterministic width per desk/line)
-    for (let l = 0; l < 3; l++)
-      drawRect(ctx, d.x+38, d.y-23+l*6, 20+(i*13+l*7)%24, 2, "#1a1a2e");
+  // ── corridor floor ──
+  drawRect(ctx, 10, COR_Y1, 780, COR_Y2 - COR_Y1, "#28252e");
+  for (let cx = 30; cx < 780; cx += 52) drawRect(ctx, cx, 291, 38, 3, "#3a3355");
+
+  // ── break room floor + rug ──
+  drawRect(ctx, 10, BREAK_Y1, 780, 232, "#2a2536");
+  drawRect(ctx, 180, 368, 430, 156, PAL.rug);
+  drawRect(ctx, 188, 376, 414, 140, PAL.rugLight);
+  drawRect(ctx, 196, 384, 398, 124, PAL.rug);
+
+  // ── ceiling / top wall ──
+  drawRect(ctx, 0, 0, CW, ROOM_Y1, PAL.wall);
+  drawRect(ctx, 0, ROOM_Y1 - 4, CW, 6, PAL.wallAccent);
+
+  // ── outer side walls ──
+  drawRect(ctx, 0, 0, WT, CH, PAL.wallAccent);
+  drawRect(ctx, CW - WT, 0, WT, CH, PAL.wallAccent);
+  drawRect(ctx, 0, CH - WT, CW, WT, PAL.wallAccent);
+
+  // ── room divider walls (vertical, between rooms) ──
+  [258, 532].forEach(vx => {
+    drawRect(ctx, vx, ROOM_Y1, WT, ROOM_Y2 - ROOM_Y1, PAL.wallAccent);
+    // pillar stub into corridor
+    drawRect(ctx, vx, COR_Y1, WT, COR_Y2 - COR_Y1, PAL.wallAccent + "88");
   });
 
-  // Whiteboard
-  drawRect(ctx, 340, 62, 120, 50, PAL.whiteboardFrame);
-  drawRect(ctx, 344, 66, 112, 42, PAL.whiteboard);
-  drawRect(ctx, 350, 74, 30, 2, "#ef4444");
-  drawRect(ctx, 350, 80, 50, 2, "#3b82f6");
-  drawRect(ctx, 350, 86, 20, 2, "#22c55e");
-  drawRect(ctx, 390, 92, 40, 2, "#f59e0b");
-
-  // Bookshelf
-  drawRect(ctx, 30, 340, 100, 120, PAL.desk);
-  for (let s = 0; s < 3; s++) {
-    drawRect(ctx, 34, 345+s*38, 92, 4, PAL.deskTop);
-    [PAL.book1,PAL.book2,PAL.book3,PAL.book4,PAL.book1,PAL.book3].forEach((bc,bi) =>
-      drawRect(ctx, 38+bi*14, 350+s*38, 10, 32, bc));
-  }
-
-  // Coffee machine
-  drawRect(ctx, 680, 360, 50, 60, "#4b5563");
-  drawRect(ctx, 684, 364, 42, 30, "#1e1e2e");
-  drawRect(ctx, 690, 370, 10, 10, "#ef4444");
-  drawRect(ctx, 706, 370, 10, 10, "#22c55e");
-  drawRect(ctx, 688, 400, 16, 16, PAL.coffee);
-  drawRect(ctx, 690, 402, 12, 12, PAL.coffeeLiquid);
-
-  // Couch
-  drawRect(ctx, 620, 430, 100, 40, "#6b21a8");
-  drawRect(ctx, 618, 426, 104, 8, "#7c3aed");
-  drawRect(ctx, 616, 420, 10, 50, "#6b21a8");
-  drawRect(ctx, 718, 420, 10, 50, "#6b21a8");
-
-  // Plants
-  [[20,130],[740,130],[620,340]].forEach(([px,py]) => {
-    drawRect(ctx, px+6, py+12, 16, 18, PAL.pot);
-    drawRect(ctx, px+4, py+10, 20, 4, PAL.pot);
-    drawRect(ctx, px+10, py-4, 8, 16, PAL.plant);
-    drawRect(ctx, px+4, py-2, 8, 10, PAL.plantDark);
-    drawRect(ctx, px+16, py, 6, 10, PAL.plantDark);
-    drawRect(ctx, px+8, py-10, 4, 8, PAL.plant);
+  // ── bottom walls of work rooms (with door gaps) ──
+  ROOM_DEFS.forEach(r => {
+    const wallY = ROOM_Y2 - WT;
+    // left segment
+    drawRect(ctx, r.x1, wallY, r.doorCx - DOOR_HW - r.x1, WT, PAL.wallAccent);
+    // right segment
+    drawRect(ctx, r.doorCx + DOOR_HW, wallY, r.x2 - (r.doorCx + DOOR_HW), WT, PAL.wallAccent);
+    // door frame (wood)
+    drawRect(ctx, r.doorCx - DOOR_HW - 4, wallY - 6, 4, WT + 10, "#6b5a3e");
+    drawRect(ctx, r.doorCx + DOOR_HW,     wallY - 6, 4, WT + 10, "#6b5a3e");
+    // door threshold line
+    drawRect(ctx, r.doorCx - DOOR_HW, ROOM_Y2 - 1, DOOR_HW * 2, 2, "#5c4a3244");
   });
 
-  // Ceiling lights
-  [200,400,600].forEach(lx => {
-    drawRect(ctx, lx-15, 0, 30, 4, "#4b5563");
-    drawRect(ctx, lx-3, 2, 6, 14, "#4b5563");
-    drawRect(ctx, lx-10, 14, 20, 6, PAL.lamp);
-    ctx.fillStyle = "rgba(251,191,36,0.08)";
-    ctx.beginPath();
-    ctx.ellipse(lx, 60, 60, 40, 0, 0, Math.PI*2);
-    ctx.fill();
+  // ── top wall of break room (open corridor→break transition) ──
+  drawRect(ctx, WT, BREAK_Y1, CW - WT*2, 3, PAL.wallAccent + "55");
+
+  // ── windows ──
+  [134, 400, 666].forEach(drawWindow.bind(null, ctx));
+
+  // ── room labels ──
+  ctx.font = "7px 'Press Start 2P', monospace";
+  ctx.textAlign = "center";
+  ROOM_DEFS.forEach(r => {
+    ctx.fillStyle = "rgba(255,255,255,0.13)";
+    ctx.fillText(r.label, (r.x1 + r.x2) / 2, ROOM_Y1 + 16);
+  });
+
+  // ── RESEARCH ROOM ──
+  drawBookshelf(ctx, 15, 78);
+  drawDesk(ctx, 78, 148, 0);
+  drawPlant(ctx, 224, 130);
+
+  // ── DEV ROOM ──
+  drawDesk(ctx, 283, 148, 1);
+  drawDesk(ctx, 403, 148, 2);
+
+  // ── MEETING ROOM ──
+  drawWhiteboard(ctx, 594, 52);
+  // meeting table + chairs
+  drawRect(ctx, 598, 160, 148, 54, PAL.desk);
+  drawRect(ctx, 602, 162, 140, 4, PAL.deskTop);
+  [[610,150],[710,150],[610,212],[710,212]].forEach(([cx,cy]) => {
+    drawRect(ctx, cx, cy, 28, 12, PAL.chair);
+  });
+  drawPlant(ctx, 756, 130);
+
+  // ── BREAK ROOM ──
+  drawBookshelf(ctx, 15, 350);
+  // coffee machine
+  drawRect(ctx, 690, 350, 52, 62, "#4b5563");
+  drawRect(ctx, 694, 354, 42, 30, "#1e1e2e");
+  drawRect(ctx, 700, 362, 10, 10, "#ef4444");
+  drawRect(ctx, 716, 362, 10, 10, "#22c55e");
+  drawRect(ctx, 698, 393, 16, 16, PAL.coffee);
+  drawRect(ctx, 700, 395, 12, 12, PAL.coffeeLiquid);
+  // couch
+  drawRect(ctx, 490, 460, 120, 42, "#6b21a8");
+  drawRect(ctx, 488, 455, 124, 8, "#7c3aed");
+  drawRect(ctx, 486, 450, 12, 52, "#6b21a8");
+  drawRect(ctx, 600, 450, 12, 52, "#6b21a8");
+  // small table
+  drawRect(ctx, 430, 462, 48, 28, "#5c4a32");
+  drawRect(ctx, 432, 460, 44, 4, "#6b5a3e");
+  // plants
+  drawPlant(ctx, 760, 346);
+  drawPlant(ctx, 15, 494);
+
+  // ── ceiling lights ──
+  [134, 400, 666, 290, 510].forEach(lx => {
+    drawRect(ctx, lx-12, ROOM_Y1, 24, 4, "#4b5563");
+    drawRect(ctx, lx-2, ROOM_Y1+2, 4, 12, "#4b5563");
+    drawRect(ctx, lx-9, ROOM_Y1+12, 18, 5, PAL.lamp);
+    ctx.fillStyle = "rgba(251,191,36,0.05)";
+    ctx.beginPath(); ctx.ellipse(lx, 80, 52, 36, 0, 0, Math.PI*2); ctx.fill();
   });
 }
 
@@ -130,16 +219,22 @@ let frame = 0;
 function render() {
   frame++;
 
-  // Move agents toward targets
+  // Move agents along waypoint path
   agents.forEach(a => {
-    const dx = a.targetX - a.x;
-    const dy = a.targetY - a.y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    if (dist > 3) {
-      a.x += (dx/dist) * 1.5;
-      a.y += (dy/dist) * 1.5;
-      a.isWalking = true;
-      a.facing = dx > 0 ? "right" : "left";
+    if (a.waypoints && a.waypoints.length > 0) {
+      const wp = a.waypoints[0];
+      const dx = wp.x - a.x, dy = wp.y - a.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 4) {
+        a.x = wp.x; a.y = wp.y;
+        a.waypoints.shift();
+        a.isWalking = a.waypoints.length > 0;
+      } else {
+        a.x += (dx/dist) * 2;
+        a.y += (dy/dist) * 2;
+        a.isWalking = true;
+        a.facing = dx > 0 ? "right" : "left";
+      }
     } else {
       a.isWalking = false;
     }
@@ -191,12 +286,13 @@ function demoTick() {
       const zone = ZONES[STATUS_TO_ZONE[newStatus]];
       const msgs = ACTIVITIES[newStatus] || ACTIVITIES.idle;
       const msg = msgs[Math.floor(Math.random() * msgs.length)];
-      const jitter = () => (Math.random()-0.5)*60;
-
+      const jitter = () => (Math.random()-0.5)*24;
+      const zoneName = STATUS_TO_ZONE[newStatus];
+      const path = buildPath(a.x, a.y, zoneName);
+      if (path.length > 0) path[path.length-1] = { x: zone.x + jitter(), y: zone.y + jitter() };
       a.status = newStatus;
       a.detail = msg;
-      a.targetX = zone.x + jitter();
-      a.targetY = zone.y + jitter() + 40;
+      a.waypoints = path;
       a.bubbleText = msg;
       a.bubbleTimer = 180;
 
@@ -276,17 +372,19 @@ function selectAgent(id) {
 }
 
 function setStatus(status) {
-  const zone = ZONES[STATUS_TO_ZONE[status]];
+  const zoneName = STATUS_TO_ZONE[status];
+  const zone = ZONES[zoneName];
   const msgs = ACTIVITIES[status] || ACTIVITIES.idle;
   const msg = msgs[Math.floor(Math.random() * msgs.length)];
 
   agents.forEach(a => {
     if (selectedAgentId && a.id !== selectedAgentId) return;
-    const jitter = () => (Math.random()-0.5)*60;
+    const jitter = () => (Math.random()-0.5)*24;
+    const path = buildPath(a.x, a.y, zoneName);
+    if (path.length > 0) path[path.length-1] = { x: zone.x + jitter(), y: zone.y + jitter() };
     a.status = status;
     a.detail = msg;
-    a.targetX = zone.x + jitter();
-    a.targetY = zone.y + jitter() + 40;
+    a.waypoints = path;
     a.bubbleText = msg;
     a.bubbleTimer = 180;
 
@@ -427,21 +525,16 @@ async function stopAgent(agentId) {
     if (a) {
       a.status = "idle";
       a.detail = "หยุดโดยผู้ใช้";
-      const zone = ZONES[STATUS_TO_ZONE["idle"]];
-      if (zone) {
-        const jitter = () => (Math.random()-0.5)*40;
-        a.targetX = zone.x + jitter();
-        a.targetY = zone.y + jitter() + 40;
-        a.bubbleText = "☕ หยุดพัก...";
-        a.bubbleTimer = 120;
-      }
+      a.waypoints = buildPath(a.x, a.y, "breakroom");
+      a.bubbleText = "☕ หยุดพัก...";
+      a.bubbleTimer = 120;
       activityLogs.unshift({ time: new Date(), agent: a.name, color: a.color, status: "idle", detail: "หยุดโดยผู้ใช้" });
       if (activityLogs.length > 30) activityLogs.pop();
     }
   } catch (e) {
     // demo mode — อัพเดตแค่ local
     const a = agents.find(ag => ag.id === agentId);
-    if (a) { a.status = "idle"; a.detail = ""; }
+    if (a) { a.status = "idle"; a.detail = ""; a.waypoints = buildPath(a.x, a.y, "breakroom"); }
   }
 }
 

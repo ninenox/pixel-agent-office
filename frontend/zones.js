@@ -1,11 +1,11 @@
 /* ─── Zone Definitions ─── */
+// Room layout: Research(x=10-258) | Dev(x=268-532) | Meeting(x=542-790) | Corridor(y=270-320) | Break(y=320-550)
 const ZONES = {
-  desk1:      { x: 120, y: 180, label: "Writing" },
-  desk2:      { x: 320, y: 180, label: "Coding" },
-  desk3:      { x: 520, y: 180, label: "Research" },
-  whiteboard: { x: 400, y: 80,  label: "Planning" },
-  breakroom:  { x: 640, y: 400, label: "Break" },
-  bookshelf:  { x: 80,  y: 400, label: "Reading" },
+  desk1:      { x: 140, y: 188, label: "Writing" },    // Research room
+  desk2:      { x: 340, y: 188, label: "Coding" },     // Dev room
+  desk3:      { x: 460, y: 188, label: "Research" },   // Dev room
+  whiteboard: { x: 666, y: 148, label: "Planning" },   // Meeting room
+  breakroom:  { x: 400, y: 430, label: "Break" },      // Break room
 };
 
 const STATUS_TO_ZONE = {

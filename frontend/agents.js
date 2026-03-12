@@ -51,14 +51,66 @@ const ACTIVITIES = {
   planning:    ["Roadmap review", "Sprint plan", "Architecture", "Diagramming"],
 };
 
+/* ─── Pathfinding ─── */
+// Room boundaries
+const ROOM_BOUNDS = {
+  research: { x1: 10,  x2: 258 },
+  dev:      { x1: 268, x2: 532 },
+  meeting:  { x1: 542, x2: 790 },
+};
+const ROOM_DOOR_X  = { research: 134, dev: 400, meeting: 666 };
+const ZONE_ROOM    = { desk1: "research", desk2: "dev", desk3: "dev", whiteboard: "meeting", breakroom: "breakroom" };
+const DOOR_INNER_Y = 254;  // just inside room before door
+const DOOR_OUTER_Y = 284;  // just in corridor after door
+const CORRIDOR_Y   = 295;  // corridor centre
+const BREAK_TOP_Y  = 330;  // top of break room
+
+function getAgentRoom(x, y) {
+  if (y >= 320) return "breakroom";
+  if (y >= 270) return "corridor";
+  if (x < 258)  return "research";
+  if (x < 542)  return "dev";
+  return "meeting";
+}
+
+function buildPath(fromX, fromY, zoneName) {
+  const zone = ZONES[zoneName];
+  if (!zone) return [];
+  const fromRoom = getAgentRoom(fromX, fromY);
+  const toRoom   = ZONE_ROOM[zoneName];
+  if (fromRoom === toRoom) return [{ x: zone.x, y: zone.y }];
+
+  const path = [];
+  // ── exit current room ──
+  if (fromRoom === "research" || fromRoom === "dev" || fromRoom === "meeting") {
+    const dx = ROOM_DOOR_X[fromRoom];
+    path.push({ x: dx, y: DOOR_INNER_Y });
+    path.push({ x: dx, y: DOOR_OUTER_Y });
+  } else if (fromRoom === "breakroom") {
+    path.push({ x: fromX, y: BREAK_TOP_Y });
+  }
+  // ── navigate corridor then enter target ──
+  if (toRoom === "breakroom") {
+    path.push({ x: zone.x, y: CORRIDOR_Y });
+    path.push({ x: zone.x, y: BREAK_TOP_Y });
+  } else {
+    const dx = ROOM_DOOR_X[toRoom];
+    path.push({ x: dx, y: CORRIDOR_Y });
+    path.push({ x: dx, y: DOOR_OUTER_Y });
+    path.push({ x: dx, y: DOOR_INNER_Y });
+  }
+  path.push({ x: zone.x, y: zone.y });
+  return path;
+}
+
 /* ─── Runtime Agent State ─── */
+const START_X = [140, 300, 500, 650];
 let agents = AGENTS_CONFIG.map((a, i) => ({
   ...a,
-  x: 200 + i * 150,
-  y: 300,
-  targetX: 200 + i * 150,
-  targetY: 300,
-  status: ["writing", "coding", "researching", "idle"][i],
+  x: START_X[i],
+  y: 430,
+  waypoints: [],
+  status: "idle",
   detail: "",
   facing: "right",
   isWalking: false,
@@ -168,9 +220,10 @@ function applyServerState(serverState) {
       const zoneName = STATUS_TO_ZONE[agent.status] || "breakroom";
       const zone = ZONES[zoneName];
       if (zone) {
-        const jitter = () => (Math.random() - 0.5) * 60;
-        agent.targetX = zone.x + jitter();
-        agent.targetY = zone.y + jitter() + 40;
+        const jitter = () => (Math.random() - 0.5) * 24;
+        const path = buildPath(agent.x, agent.y, zoneName);
+        if (path.length > 0) path[path.length - 1] = { x: zone.x + jitter(), y: zone.y + jitter() };
+        agent.waypoints = path;
         agent.bubbleText = agent.detail || agent.status;
         agent.bubbleTimer = 180;
       }
