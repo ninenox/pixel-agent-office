@@ -1,0 +1,26 @@
+{
+  "claude-opus": {
+    "name": "Claude Opus",
+    "role": "นักวิจัยอาวุโส — วิเคราะห์เชิงลึก ตอบซับซ้อน",
+    "model": "claude-opus-4-6",
+    "color": "#f97316"
+  },
+  "claude-sonnet": {
+    "name": "Claude Sonnet",
+    "role": "Software Architect — ออกแบบระบบ เขียนโค้ด",
+    "model": "claude-sonnet-4-6",
+    "color": "#8b5cf6"
+  },
+  "claude-haiku": {
+    "name": "Claude Haiku",
+    "role": "Quick Responder — ตอบเร็ว สรุปสั้น งานเบา",
+    "model": "claude-haiku-4-5-20251001",
+    "color": "#06b6d4"
+  },
+  "claude-code": {
+    "name": "Claude Code",
+    "role": "Developer Agent — debug, refactor, เขียน test",
+    "model": "claude-sonnet-4-6",
+    "color": "#22c55e"
+  }
+}

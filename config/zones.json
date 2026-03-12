@@ -1,0 +1,50 @@
+{
+  "writing": {
+    "zone": "desk1",
+    "label": "Writing",
+    "x": 120,
+    "y": 180
+  },
+  "coding": {
+    "zone": "desk2",
+    "label": "Coding",
+    "x": 320,
+    "y": 180
+  },
+  "researching": {
+    "zone": "desk3",
+    "label": "Research",
+    "x": 520,
+    "y": 180
+  },
+  "thinking": {
+    "zone": "whiteboard",
+    "label": "Planning",
+    "x": 400,
+    "y": 80
+  },
+  "planning": {
+    "zone": "whiteboard",
+    "label": "Planning",
+    "x": 400,
+    "y": 80
+  },
+  "idle": {
+    "zone": "breakroom",
+    "label": "Break",
+    "x": 640,
+    "y": 400
+  },
+  "error": {
+    "zone": "breakroom",
+    "label": "Break",
+    "x": 640,
+    "y": 400
+  },
+  "syncing": {
+    "zone": "desk1",
+    "label": "Syncing",
+    "x": 120,
+    "y": 180
+  }
+}

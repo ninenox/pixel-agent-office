@@ -1,0 +1,24 @@
+{
+  "agents": {
+    "claude-opus": {
+      "status": "idle",
+      "detail": "พร้อมทำงาน",
+      "updated_at": ""
+    },
+    "claude-sonnet": {
+      "status": "idle",
+      "detail": "พร้อมทำงาน",
+      "updated_at": ""
+    },
+    "claude-haiku": {
+      "status": "idle",
+      "detail": "พร้อมทำงาน",
+      "updated_at": ""
+    },
+    "claude-code": {
+      "status": "idle",
+      "detail": "พร้อมทำงาน",
+      "updated_at": ""
+    }
+  }
+}

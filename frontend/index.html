@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Agent Office</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header id="header">
+    <div class="header-left">
+      <div class="logo">🏢</div>
+      <div>
+        <div class="title">Claude Agent Office</div>
+        <div class="subtitle">Pixel Office Dashboard</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="status-dot">● ONLINE</span>
+      <span id="clock">00:00:00</span>
+      <button id="btn-sidebar" onclick="toggleSidebar()">◀ Panel</button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <div id="main">
+    <!-- Canvas Area -->
+    <div id="canvas-area">
+      <!-- Agent Cards -->
+      <div id="agent-cards"></div>
+      <!-- Pixel Office Canvas -->
+      <div id="canvas-wrap">
+        <canvas id="office" width="800" height="560"></canvas>
+        <div id="zone-labels"></div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div id="agent-detail"></div>
+      <div class="sidebar-header">📋 ACTIVITY LOG</div>
+      <div id="activity-log"></div>
+      <div id="quick-actions">
+        <div class="sidebar-header">⚡ QUICK ACTIONS</div>
+        <div id="action-buttons"></div>
+        <div id="action-target">→ All agents</div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="zones.js"></script>
+  <script src="agents.js"></script>
+  <script src="office.js"></script>
+</body>
+</html>
