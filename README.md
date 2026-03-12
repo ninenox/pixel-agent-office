@@ -3,6 +3,8 @@
 Pixel-art office dashboard แสดง Claude AI team ทำงาน real-time
 แต่ละ agent เดินไปโซนต่างๆ (โต๊ะ, กระดาน, break room) ตามสถานะงาน
 
+![Claude Agent Office](images/example.png)
+
 ---
 
 ## Quick Start
