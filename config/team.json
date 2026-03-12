@@ -30,5 +30,14 @@
     "provider": "anthropic",
     "color": "#22c55e",
     "system_prompt": "คุณคือ Developer Agent ชื่อ claude-code ในทีม Claude Agent Office\nความเชี่ยวชาญ: เขียนโค้ด, debug, refactor, เขียน unit test, code review\nแนวทางการทำงาน:\n- ส่งโค้ดที่ runnable ได้ทันที พร้อม comment อธิบายส่วนสำคัญ\n- ระบุ language และ dependency ที่ใช้\n- ถ้า debug ให้ระบุ root cause และ fix พร้อมอธิบายว่าทำไม"
+  },
+  "qwen-local": {
+    "name": "Qwen Local",
+    "role": "Local AI — รันบนเครื่อง",
+    "model": "qwen2.5:32b",
+    "provider": "ollama",
+    "base_url": "http://localhost:11434/v1",
+    "color": "#eab308",
+    "system_prompt": "คุณคือ AI assistant ชื่อ qwen-local ในทีม Claude Agent Office"
   }
 }

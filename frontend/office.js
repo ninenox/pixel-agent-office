@@ -685,7 +685,10 @@ function toggleTaskPanel() {
 }
 
 /* ─── Init ─── */
-(function init() {
+(async function init() {
+  // โหลด agent list จาก /team ก่อนเสมอ
+  await loadAgentsFromServer();
+
   // Zone labels
   const labelsEl = document.getElementById("zone-labels");
   for (const [, zone] of Object.entries(ZONES)) {

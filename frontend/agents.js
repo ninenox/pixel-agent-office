@@ -1,46 +1,7 @@
-/* ─── Agent Definitions ─── */
-const AGENTS_CONFIG = [
-  {
-    id: "claude-opus",
-    name: "Claude Opus",
-    role: "Lead Researcher",
-    color: "#f97316",
-    skinColor: "#fcd5b5",
-    hairColor: "#4a3728",
-    shirtColor: "#f97316",
-    pantsColor: "#374151",
-  },
-  {
-    id: "claude-sonnet",
-    name: "Claude Sonnet",
-    role: "Code Architect",
-    color: "#8b5cf6",
-    skinColor: "#e8c4a0",
-    hairColor: "#1a1a2e",
-    shirtColor: "#8b5cf6",
-    pantsColor: "#1f2937",
-  },
-  {
-    id: "claude-haiku",
-    name: "Claude Haiku",
-    role: "Quick Responder",
-    color: "#06b6d4",
-    skinColor: "#f5d6b8",
-    hairColor: "#92400e",
-    shirtColor: "#06b6d4",
-    pantsColor: "#374151",
-  },
-  {
-    id: "claude-code",
-    name: "Claude Code",
-    role: "Dev Agent",
-    color: "#22c55e",
-    skinColor: "#deb896",
-    hairColor: "#1e293b",
-    shirtColor: "#22c55e",
-    pantsColor: "#1e293b",
-  },
-];
+/* ─── Agent Definitions (loaded from /team) ─── */
+const SKIN_COLORS  = ["#fcd5b5", "#e8c4a0", "#f5d6b8", "#deb896", "#fde68a", "#c8a882", "#f0c8a0"];
+const HAIR_COLORS  = ["#4a3728", "#1a1a2e", "#92400e", "#1e293b", "#78350f", "#2d1b69", "#374151"];
+const PANTS_COLORS = ["#374151", "#1f2937", "#374151", "#1e293b", "#374151", "#1f2937", "#374151"];
 
 const ACTIVITIES = {
   writing:     ["Drafting report...", "Editing document", "Writing summary", "Composing email"],
@@ -104,19 +65,35 @@ function buildPath(fromX, fromY, zoneName) {
 }
 
 /* ─── Runtime Agent State ─── */
-const START_X = [140, 300, 500, 650];
-let agents = AGENTS_CONFIG.map((a, i) => ({
-  ...a,
-  x: START_X[i],
-  y: 430,
-  waypoints: [],
-  status: "idle",
-  detail: "",
-  facing: "right",
-  isWalking: false,
-  bubbleText: "",
-  bubbleTimer: 0,
-}));
+let agents = [];
+
+async function loadAgentsFromServer() {
+  try {
+    const res = await fetch("/team");
+    const teamConfig = await res.json();
+    agents = Object.entries(teamConfig).map(([id, cfg], i) => ({
+      id,
+      name: cfg.name,
+      role: cfg.role,
+      color: cfg.color || "#9ca3af",
+      skinColor:  SKIN_COLORS[i % SKIN_COLORS.length],
+      hairColor:  HAIR_COLORS[i % HAIR_COLORS.length],
+      shirtColor: cfg.color || "#9ca3af",
+      pantsColor: PANTS_COLORS[i % PANTS_COLORS.length],
+      x: 100 + i * Math.floor(700 / Math.max(Object.keys(teamConfig).length, 1)),
+      y: 430,
+      waypoints: [],
+      status: "idle",
+      detail: "",
+      facing: "right",
+      isWalking: false,
+      bubbleText: "",
+      bubbleTimer: 0,
+    }));
+  } catch (e) {
+    console.warn("[agents] ไม่สามารถโหลด team config ได้:", e);
+  }
+}
 
 let selectedAgentId = null;
 let activityLogs = [];

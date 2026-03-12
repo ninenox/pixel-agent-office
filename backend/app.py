@@ -190,6 +190,17 @@ def stop_agents():
     return jsonify({"ok": True, "stopped": stopped})
 
 
+@app.route("/team", methods=["GET"])
+def get_team():
+    """ส่ง team config จาก team.json"""
+    team_file = os.path.join(BASE_DIR, "config", "team.json")
+    try:
+        with open(team_file, "r", encoding="utf-8") as f:
+            return jsonify(json.load(f))
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"ok": True, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
