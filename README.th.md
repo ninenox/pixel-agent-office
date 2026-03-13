@@ -31,25 +31,53 @@ python main.py
 
 ---
 
+## Layout ของ UI
+
+```
+┌──────────────┬───────────────────────────────┬──────────────┐
+│ TASK DISPATCH│                               │ ACTIVITY LOG │
+│ (panel ซ้าย) │      Pixel Office Canvas      │              │
+│              │                               │ QUICK ACTIONS│
+│  ⚙ MANUAL   │                               │              │
+│  ✦ AUTO     ├───────────────────────────────┤              │
+│              │ 📄 OUTPUT  [Opus][Sonnet]...  │              │
+└──────────────┴───────────────────────────────┴──────────────┘
+```
+
+- **Panel ซ้าย** — Task Dispatch: สั่งงานแต่ละ agent (Manual) หรืออธิบายเป้าหมาย (Auto)
+- **กลาง** — Pixel office canvas พร้อม agent เคลื่อนไหว ขยายเต็มพื้นที่ที่เหลือ
+- **Output panel** — แสดงผลลัพธ์เต็มของแต่ละ agent คลิก tab เพื่อสลับดู
+- **Sidebar ขวา** — Activity Log และ Quick Actions (toggle ด้วยปุ่ม ◀ Panel)
+
+---
+
 ## วิธีใช้งาน
 
 ### ⚡ MANUAL Mode
 
-กด **⚡ TASK DISPATCH** ที่ด้านบนของหน้าเว็บ → เลือก tab **⚙ MANUAL**
+เลือก tab **⚙ MANUAL** ใน Task Dispatch panel ด้านซ้าย
 
 - พิมพ์งานในช่อง input ของแต่ละ agent
 - กด **▶ RUN** เพื่อส่งงาน agent ทีละตัว หรือ `Ctrl+Enter`
 - กด **🚀 DISPATCH ALL** เพื่อส่งงานทุก agent พร้อมกัน
-- กด **■ STOP** หน้าชื่อ agent เพื่อหยุดงานนั้น หรือ **■ STOP ALL** เพื่อหยุดทุกตัว
+- กด **■** หน้าชื่อ agent เพื่อหยุดงานนั้น หรือ **■ STOP ALL** เพื่อหยุดทุกตัว
 
 ### ✦ AUTO Mode (Brainstorm)
 
-เลือก tab **✦ AUTO** ใน TASK DISPATCH:
+เลือก tab **✦ AUTO** ใน Task Dispatch panel
 
 - พิมพ์งานที่ต้องการในช่องเดียว
 - กด **✦ BRAINSTORM** — Boss AI จะวิเคราะห์และแจกงานให้ทีมเอง
 - agent ทุกตัวจะเดินไปที่ whiteboard ก่อน จากนั้น Boss จะแบ่งงาน
 - ดู plan และ assignment ที่ Boss วางไว้ได้ในกล่องด้านล่างปุ่ม
+
+### 📄 Output Panel
+
+Output panel อยู่ใต้ canvas แสดงผลลัพธ์เต็มของ agent หลังทำงานเสร็จ
+
+- คลิก tab ของ agent เพื่อดู output ของแต่ละตัว
+- dot ข้าง tab จะกระพริบแสดงสีสถานะขณะ agent กำลังทำงาน
+- คลิก header เพื่อย่อ/ขยาย panel
 
 ### CLI
 
@@ -63,7 +91,7 @@ python main.py --agents-only --tasks tasks.json
 {
   "claude-opus":   "วิเคราะห์แนวโน้ม AI Agent ปี 2026",
   "claude-sonnet": "ออกแบบ REST API สำหรับ task management",
-  "claude-haiku":  "สรุปข่าวเทคโนโลยีวันนี้",
+  "claude-haiku":  "สรุปพัฒนาการล่าสุดของ LLM",
   "claude-code":   "เขียน unit test สำหรับ authentication"
 }
 ```
@@ -79,7 +107,7 @@ python agent_runner.py claude-haiku "สรุป 3 เทคนิค prompt en
 
 ## Agents
 
-กำหนดได้ที่ `config/team.json` — เพิ่ม ลบ หรือแก้ไข agent ได้เลยโดยไม่ต้องแก้โค้ด
+กำหนดได้ที่ `config/team.json` — เพิ่ม ลบ หรือแก้ไข agent ได้เลยโดยไม่ต้องแก้โค้ด รีเฟรชเบราว์เซอร์หลังบันทึก
 
 | Field | คำอธิบาย |
 |-------|----------|
@@ -155,7 +183,8 @@ python main.py
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/status` | อ่านสถานะ agents ทั้งหมด |
+| GET | `/team` | ดึง team config จาก `team.json` (UI โหลดตอน start) |
+| GET | `/status` | อ่านสถานะ agents ทั้งหมด (มี field `output` เมื่อมีผลลัพธ์) |
 | POST | `/status` | อัพเดตสถานะ agent |
 | POST | `/run` | ส่ง tasks แล้วรัน agents ใน background |
 | POST | `/brainstorm` | Boss วิเคราะห์งาน → แบ่งให้ทีม (AUTO mode) |
@@ -175,6 +204,20 @@ python main.py
 **POST `/stop`:**
 ```json
 { "agent_id": "claude-opus" }   // ละไว้ = หยุดทุกตัว
+```
+
+**GET `/status` response:**
+```json
+{
+  "agents": {
+    "claude-opus": {
+      "status": "idle",
+      "detail": "เสร็จแล้ว ✓ [anthropic]",
+      "updated_at": "14:32:01",
+      "output": "นี่คือผลการวิเคราะห์..."
+    }
+  }
+}
 ```
 
 ---

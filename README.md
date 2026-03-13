@@ -31,25 +31,53 @@ Open browser: http://localhost:19000
 
 ---
 
+## UI Layout
+
+```
+┌──────────────┬───────────────────────────────┬──────────────┐
+│ TASK DISPATCH│                               │ ACTIVITY LOG │
+│  (left panel)│      Pixel Office Canvas      │              │
+│              │                               │ QUICK ACTIONS│
+│  ⚙ MANUAL   │                               │              │
+│  ✦ AUTO     ├───────────────────────────────┤              │
+│              │ 📄 OUTPUT  [Opus][Sonnet]...  │              │
+└──────────────┴───────────────────────────────┴──────────────┘
+```
+
+- **Left panel** — Task Dispatch: assign tasks per agent (Manual) or describe a goal (Auto)
+- **Center** — Pixel office canvas with animated agents, expands to fill available space
+- **Output panel** — shows each agent's full response; click a tab to switch between agents
+- **Right sidebar** — Activity Log and Quick Actions (toggle with ◀ Panel button)
+
+---
+
 ## Usage
 
 ### ⚡ MANUAL Mode
 
-Click **⚡ TASK DISPATCH** at the top → select the **⚙ MANUAL** tab.
+Select the **⚙ MANUAL** tab in the left Task Dispatch panel.
 
 - Type a task in each agent's input box
 - Click **▶ RUN** to send a task to one agent, or press `Ctrl+Enter`
 - Click **🚀 DISPATCH ALL** to send tasks to all agents simultaneously
-- Click **■ STOP** next to an agent name to stop that agent, or **■ STOP ALL** to stop everyone
+- Click **■** next to an agent's name card to stop that agent, or **■ STOP ALL** to stop everyone
 
 ### ✦ AUTO Mode (Brainstorm)
 
-Select the **✦ AUTO** tab in TASK DISPATCH:
+Select the **✦ AUTO** tab in the Task Dispatch panel.
 
-- Describe your goal in a single text box
+- Describe your goal in the text box
 - Click **✦ BRAINSTORM** — the Boss AI analyzes and assigns tasks automatically
 - All agents walk to the whiteboard first, then Boss distributes work
 - The Boss's plan and per-agent assignments appear below the button
+
+### 📄 Output Panel
+
+The output panel below the canvas displays each agent's full response after a task completes.
+
+- Click an agent tab to view their output
+- A dot next to each tab glows while that agent is running
+- The panel can be collapsed by clicking the header
 
 ### CLI
 
@@ -63,7 +91,7 @@ Example `tasks.json`:
 {
   "claude-opus":   "Analyze AI Agent trends for 2026",
   "claude-sonnet": "Design a REST API for task management",
-  "claude-haiku":  "Summarize today's tech news",
+  "claude-haiku":  "Summarize recent developments in LLMs",
   "claude-code":   "Write unit tests for user authentication"
 }
 ```
@@ -88,7 +116,7 @@ Agents are defined in `config/team.json`. The UI loads agent configuration dynam
 | `model` | Model ID to use |
 | `provider` | `anthropic` \| `openai` \| `ollama` |
 | `base_url` | Custom API endpoint (for ollama or compatible APIs) |
-| `color` | Agent dot color (hex) |
+| `color` | Agent color (hex) |
 | `system_prompt` | Full system prompt defining capabilities and behavior |
 
 ### Supported Providers
@@ -156,7 +184,7 @@ python main.py
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/team` | Get team config from `team.json` (used by UI on load) |
-| GET | `/status` | Get all agent statuses |
+| GET | `/status` | Get all agent statuses (includes `output` field when available) |
 | POST | `/status` | Update a single agent's status |
 | POST | `/run` | Send tasks and run agents in the background |
 | POST | `/brainstorm` | Boss analyzes a goal and assigns work (AUTO mode) |
@@ -176,6 +204,20 @@ python main.py
 **POST `/stop`:**
 ```json
 { "agent_id": "claude-opus" }   // omit to stop all agents
+```
+
+**GET `/status` response:**
+```json
+{
+  "agents": {
+    "claude-opus": {
+      "status": "idle",
+      "detail": "เสร็จแล้ว ✓ [anthropic]",
+      "updated_at": "14:32:01",
+      "output": "Here is my analysis..."
+    }
+  }
+}
 ```
 
 ---
