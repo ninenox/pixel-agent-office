@@ -118,6 +118,7 @@ python agent_runner.py claude-haiku "สรุป 3 เทคนิค prompt en
 | `base_url` | API endpoint (สำหรับ ollama หรือ compatible API) |
 | `color` | สีของ agent (hex) |
 | `system_prompt` | System prompt กำหนดความสามารถและแนวทางการทำงาน |
+| `tools` | รายชื่อ tools ที่เปิดใช้ เช่น `["all"]` หรือ `["web_search", "read_file"]` |
 
 ### Provider ที่รองรับ
 
@@ -155,6 +156,22 @@ python agent_runner.py claude-haiku "สรุป 3 เทคนิค prompt en
 }
 ```
 
+### ตัวอย่าง: เปิดใช้ tools ให้ agent
+
+```json
+"claude-sonnet": {
+  "tools": ["all"]
+}
+```
+
+หรือระบุเฉพาะ tools ที่ต้องการ:
+
+```json
+"claude-code": {
+  "tools": ["run_python", "read_file", "write_file"]
+}
+```
+
 ### กำหนด Boss (AUTO mode)
 
 Boss ใช้ `claude-sonnet-4-6` เป็น default เปลี่ยนได้โดยเพิ่ม key `"boss"`:
@@ -165,6 +182,57 @@ Boss ใช้ `claude-sonnet-4-6` เป็น default เปลี่ยนไ
   "model": "qwen2.5:14b",
   "base_url": "http://localhost:11434/v1"
 }
+```
+
+---
+
+## Tools
+
+Agent สามารถใช้ tools เพื่อโต้ตอบกับระบบภายนอกได้ Tools อยู่ใน `agents/tools/` และถูก **auto-discover** ตอน startup — สร้างไฟล์ใหม่แล้ว restart เท่านั้น ไม่ต้องแก้โค้ดไฟล์อื่น
+
+### Tools ที่มีให้ใช้
+
+| Tool | คำอธิบาย | ต้องการ |
+|------|----------|---------|
+| `read_file` | อ่านไฟล์จาก `workspace/` | — |
+| `write_file` | เขียนไฟล์ไปที่ `outputs/` (write หรือ append) | — |
+| `run_python` | รัน Python code คืน stdout (timeout 15s) | — |
+| `http_request` | HTTP GET / POST / PUT / DELETE | — |
+| `web_search` | ค้นหาเว็บ real-time ผ่าน Brave Search API | `BRAVE_API_KEY` |
+
+`workspace/` — วางไฟล์ input ที่ต้องการให้ agent อ่านไว้ที่นี่
+`outputs/` — agent เขียนผลลัพธ์ไว้ที่นี่ พร้อม save อัตโนมัติหลังทุก task
+
+### เพิ่ม Tool ใหม่
+
+สร้าง `agents/tools/my_tool.py`:
+
+```python
+from .base import BaseTool
+
+class MyTool(BaseTool):
+    name = "my_tool"
+    description = "อธิบายว่า tool นี้ทำอะไร"
+    input_schema = {
+        "type": "object",
+        "properties": {
+            "input": {"type": "string", "description": "..."},
+        },
+        "required": ["input"],
+    }
+
+    def run(self, input: str) -> str:
+        return f"result: {input}"
+```
+
+Restart server — `my_tool` พร้อมใช้งานทันที
+
+### รัน Agent พร้อม Tools (CLI)
+
+```bash
+cd agents
+python agent_tools.py claude-sonnet "วิจัย LLM benchmark ล่าสุดและเขียนรายงาน" --tools all
+python agent_tools.py claude-code "เขียนและรัน script เรียง CSV" --tools run_python write_file
 ```
 
 ---

@@ -118,6 +118,7 @@ Agents are defined in `config/team.json`. The UI loads agent configuration dynam
 | `base_url` | Custom API endpoint (for ollama or compatible APIs) |
 | `color` | Agent color (hex) |
 | `system_prompt` | Full system prompt defining capabilities and behavior |
+| `tools` | List of tools to enable, e.g. `["all"]` or `["web_search", "read_file"]` |
 
 ### Supported Providers
 
@@ -155,6 +156,22 @@ Agents are defined in `config/team.json`. The UI loads agent configuration dynam
 }
 ```
 
+### Example: enabling tools for an agent
+
+```json
+"claude-sonnet": {
+  "tools": ["all"]
+}
+```
+
+Or restrict to specific tools:
+
+```json
+"claude-code": {
+  "tools": ["run_python", "read_file", "write_file"]
+}
+```
+
 ### Configuring the Boss (AUTO mode)
 
 By default the Boss uses `claude-sonnet-4-6`. Override by adding a `"boss"` key:
@@ -165,6 +182,57 @@ By default the Boss uses `claude-sonnet-4-6`. Override by adding a `"boss"` key:
   "model": "qwen2.5:14b",
   "base_url": "http://localhost:11434/v1"
 }
+```
+
+---
+
+## Tools
+
+Agents can use tools to interact with the outside world. Tools live in `agents/tools/` and are **auto-discovered** on startup — add a new file and restart, no other changes needed.
+
+### Built-in Tools
+
+| Tool | Description | Requires |
+|------|-------------|----------|
+| `read_file` | Read a file from `workspace/` | — |
+| `write_file` | Write a file to `outputs/` (write or append) | — |
+| `run_python` | Execute Python code, returns stdout (15s timeout) | — |
+| `http_request` | HTTP GET / POST / PUT / DELETE | — |
+| `web_search` | Real-time web search via Brave Search API | `BRAVE_API_KEY` |
+
+`workspace/` — place input files here for agents to read.
+`outputs/` — agents write results here; also saved automatically after each task.
+
+### Adding a New Tool
+
+Create `agents/tools/my_tool.py`:
+
+```python
+from .base import BaseTool
+
+class MyTool(BaseTool):
+    name = "my_tool"
+    description = "What this tool does"
+    input_schema = {
+        "type": "object",
+        "properties": {
+            "input": {"type": "string", "description": "..."},
+        },
+        "required": ["input"],
+    }
+
+    def run(self, input: str) -> str:
+        return f"result: {input}"
+```
+
+Restart the server — `my_tool` is now available to all agents.
+
+### Running an Agent with Tools (CLI)
+
+```bash
+cd agents
+python agent_tools.py claude-sonnet "Research the latest LLM benchmarks and write a report" --tools all
+python agent_tools.py claude-code "Write and run a script to sort a CSV file" --tools run_python write_file
 ```
 
 ---
