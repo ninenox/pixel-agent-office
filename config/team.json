@@ -2,7 +2,9 @@
   "research-agent": {
     "name": "qwen2.5 Researcher",
     "tools": [
-      "google_calendar"
+      "google_calendar",
+      "telegram_notify",
+      "create_schedule"
     ],
     "role": "นักวิจัยอาวุโส — วิเคราะห์เชิงลึก ตอบซับซ้อน",
     "model": "qwen2.5:7b",

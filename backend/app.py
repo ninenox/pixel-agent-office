@@ -21,6 +21,8 @@ if AGENTS_DIR not in sys.path:
 app = Flask(__name__, static_folder=FRONTEND_DIR)
 CORS(app)
 
+SCHEDULES_FILE = os.path.join(BASE_DIR, "config", "schedules.json")
+
 
 def read_state():
     """อ่าน state.json"""
@@ -204,6 +206,139 @@ def get_team():
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"ok": True, "time": time.strftime("%Y-%m-%d %H:%M:%S")})
+
+
+# ─── Schedules API ───
+
+def _read_schedules():
+    try:
+        with open(SCHEDULES_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def _write_schedules(schedules):
+    with open(SCHEDULES_FILE, "w", encoding="utf-8") as f:
+        json.dump(schedules, f, ensure_ascii=False, indent=2)
+
+
+@app.route("/schedules", methods=["GET"])
+def get_schedules():
+    """ดู schedules ทั้งหมด พร้อม next_run"""
+    from scheduler import get_jobs_info
+    schedules = _read_schedules()
+    jobs = {j["id"]: j["next_run"] for j in get_jobs_info()}
+    for s in schedules:
+        s["next_run"] = jobs.get(s["id"])
+    return jsonify(schedules)
+
+
+@app.route("/schedules", methods=["POST"])
+def create_schedule():
+    """สร้าง schedule ใหม่"""
+    import uuid
+    from datetime import datetime
+    from apscheduler.triggers.cron import CronTrigger
+    from scheduler import _scheduler, _run_scheduled_agent
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "JSON body required"}), 400
+    for field in ("cron", "agent_id", "task"):
+        if not data.get(field):
+            return jsonify({"error": f"'{field}' required"}), 400
+
+    cron = data["cron"]
+    parts = cron.split()
+    if len(parts) != 5:
+        return jsonify({"error": f"cron ไม่ถูกต้อง: '{cron}'"}), 400
+
+    new_schedule = {
+        "id": str(uuid.uuid4())[:8],
+        "cron": cron,
+        "agent_id": data["agent_id"],
+        "task": data["task"],
+        "enabled": True,
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    schedules = _read_schedules()
+    schedules.append(new_schedule)
+    _write_schedules(schedules)
+
+    try:
+        _scheduler.add_job(
+            _run_scheduled_agent,
+            trigger=CronTrigger.from_crontab(cron, timezone="Asia/Bangkok"),
+            id=f"sched_{new_schedule['id']}",
+            args=[new_schedule["agent_id"], new_schedule["task"], new_schedule["id"]],
+            replace_existing=True,
+            misfire_grace_time=300,
+        )
+    except Exception as e:
+        return jsonify({"error": f"scheduler error: {e}"}), 500
+
+    return jsonify({"ok": True, "schedule": new_schedule})
+
+
+@app.route("/schedules/<schedule_id>", methods=["DELETE"])
+def delete_schedule(schedule_id):
+    """ลบ schedule"""
+    from scheduler import _scheduler
+
+    schedules = _read_schedules()
+    filtered = [s for s in schedules if s["id"] != schedule_id]
+    if len(filtered) == len(schedules):
+        return jsonify({"error": f"ไม่พบ schedule '{schedule_id}'"}), 404
+
+    _write_schedules(filtered)
+    job_id = f"sched_{schedule_id}"
+    if _scheduler.get_job(job_id):
+        _scheduler.remove_job(job_id)
+
+    return jsonify({"ok": True, "deleted": schedule_id})
+
+
+@app.route("/schedules/<schedule_id>/toggle", methods=["POST"])
+def toggle_schedule(schedule_id):
+    """เปิด/ปิด schedule"""
+    from apscheduler.triggers.cron import CronTrigger
+    from scheduler import _scheduler, _run_scheduled_agent
+
+    schedules = _read_schedules()
+    target = next((s for s in schedules if s["id"] == schedule_id), None)
+    if not target:
+        return jsonify({"error": f"ไม่พบ schedule '{schedule_id}'"}), 404
+
+    target["enabled"] = not target.get("enabled", True)
+    _write_schedules(schedules)
+
+    job_id = f"sched_{schedule_id}"
+    if target["enabled"]:
+        _scheduler.add_job(
+            _run_scheduled_agent,
+            trigger=CronTrigger.from_crontab(target["cron"], timezone="Asia/Bangkok"),
+            id=job_id,
+            args=[target["agent_id"], target["task"], target["id"]],
+            replace_existing=True,
+        )
+    else:
+        if _scheduler.get_job(job_id):
+            _scheduler.remove_job(job_id)
+
+    return jsonify({"ok": True, "id": schedule_id, "enabled": target["enabled"]})
+
+
+# ─── Startup ───
+
+def _start_scheduler():
+    from scheduler import start as scheduler_start
+    scheduler_start()
+
+
+_scheduler_thread = threading.Thread(target=_start_scheduler, daemon=True)
+_scheduler_thread.start()
 
 
 if __name__ == "__main__":

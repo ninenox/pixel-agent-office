@@ -217,4 +217,7 @@ config/google_token.json
 config/*.key
 config/*.secret
 
+# User-specific schedules (local only)
+config/schedules.json
+
 .DS_Store
