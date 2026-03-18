@@ -15,7 +15,7 @@ info() { echo -e "${CYAN}  →${NC} $1"; }
 warn() { echo -e "${YELLOW}  ⚠${NC} $1"; }
 err()  { echo -e "${RED}  ✗${NC} $1"; exit 1; }
 
-echo -e "\n${BOLD}🏢 Claude Agent Office — Setup${NC}\n"
+echo -e "\n${BOLD}🏢 Pix Agent Office — Setup${NC}\n"
 
 # ─── Check OS ───
 case "$(uname -s)" in
